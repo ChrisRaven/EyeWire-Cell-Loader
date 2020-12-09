@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cell Loader
 // @namespace    http://tampermonkey.net/
-// @version      1.0.1.0
+// @version      1.1.0.0
 // @description  Fully loads cells to the highest details
 // @author       Krzysztof Kruk
 // @match        https://*.eyewire.org/*
@@ -88,7 +88,7 @@ if (LOCAL) {
       K.addCSSFile('http://127.0.0.1:8887/styles.css');
     }
     else {
-      K.addCSSFile('https://chrisraven.github.io/EyeWire-Cell-Loader/styles.css?v=1');
+      K.addCSSFile('https://chrisraven.github.io/EyeWire-Cell-Loader/styles.css?v=2');
     }
 
     $('#gameTools').after('<span id="fully-load-cell-counter" title="Fully load a cell"></span>');
@@ -103,15 +103,20 @@ if (LOCAL) {
       })
     `);
 
-    let originalDistanceFromCamera;
-    let originalMeshForInterleavedData;
-
-    let newDistanceFromCamera = function () {
-        return 1000;
-    };
-
-    let newMeshForInterleavedData;
-    let cubeLoadedEvent = new CustomEvent("cube loaded");
+    let contextMenuId = 'cell-loader-context-menu';
+    let contextMenu = document.createElement('div');
+    contextMenu.id = contextMenuId;
+    contextMenu.classList.add("help-menu");
+    contextMenu.innerHTML = `
+      <input type="radio" name="cell-loader-context-menu-level-selection" id="cell-loader-lvl1" value="level1">
+        <label for="cell-loader-lvl1">Level 1 (highest details)</label><br>
+      <input type="radio" name="cell-loader-context-menu-level-selection" id="cell-loader-lvl2" value="level2">
+        <label for="cell-loader-lvl2">Level 2</label><br>
+      <input type="radio" name="cell-loader-context-menu-level-selection" id="cell-loader-lvl3" value="level3">
+        <label for="cell-loader-lvl3">Level 3 (lowest details)</label>
+    `;
+    document.body.appendChild(contextMenu);
+    contextMenu = K.gid(contextMenuId);
 
     let lsStateName = 'cell-loader-state';
     let turnedOn = K.ls.get(lsStateName);
@@ -120,20 +125,36 @@ if (LOCAL) {
       turnedOn = true;
       K.ls.set(lsStateName, turnedOn);
     }
+    
+    let lsLevelOfDetailsName = 'level-of-details';
+    let levelOfDetails = K.ls.get(lsLevelOfDetailsName); // 1000 - highest, 3000 - lowest
+
+    if (levelOfDetails === null) {
+      levelOfDetails = 1000;
+      K.ls.set(lsLevelOfDetailsName, levelOfDetails);
+      K.gid('cell-lodader-lvl1').checked = true;
+    }
+    else {
+      K.gid('cell-loader-lvl' + levelOfDetails / 1000).checked = true;
+    }
+    
+    let newDistanceFromCamera = function () {
+      return levelOfDetails;
+    };
+
+    let cubeLoadedEvent = new CustomEvent("cube loaded");
 
     let cellSize;
     let counter = K.gid('fully-load-cell-counter');
     let numberOfLoadedCubes = 0;
 
+    let originalDistanceFromCamera = tomni.threeD.distanceFromCamera;
+    let originalMeshForInterleavedData = tomni.threeD.meshForInterleavedData;
 
-    originalDistanceFromCamera = tomni.threeD.distanceFromCamera;
-    originalMeshForInterleavedData = tomni.threeD.meshForInterleavedData;
-
-    newMeshForInterleavedData = function (data, material) {
+    let newMeshForInterleavedData = function (data, material) {
       document.dispatchEvent(cubeLoadedEvent);
       return originalMeshForInterleavedData(data, material);
     };
-
 
     function setState() {
       if (turnedOn) {
@@ -152,7 +173,6 @@ if (LOCAL) {
       counter.innerHTML = cellSize + ' / ' + numberOfLoadedCubes;
     }
 
-
     document.addEventListener('cube loaded', function() {
       numberOfLoadedCubes++;
       updateCounter();
@@ -166,12 +186,37 @@ if (LOCAL) {
       updateCounter();
     });
 
+    document.addEventListener('click', function (event) {
+      if (event.target.id !== contextMenuId && event.target.parentNode.id !== contextMenuId) {
+        contextMenu.style.display = 'none';
+      }
+    })
+
     counter.addEventListener('click', function () {
       turnedOn = !turnedOn;
       K.ls.set(lsStateName, turnedOn);
       setState();
     });
 
+    counter.addEventListener('contextmenu', function (event) {
+      event.preventDefault();
+      contextMenu.style.display = 'block';
+    });
+
+    contextMenu.addEventListener('change', function (event) {
+      switch (event.target.value) {
+        case 'level1':
+          levelOfDetails = 1000;
+          break;
+        case 'level2':
+          levelOfDetails = 2000;
+          break;
+        case 'level3':
+          levelOfDetails = 3000;
+          break;
+      }
+      K.ls.set(lsLevelOfDetailsName, levelOfDetails);
+    });
 
     setState();
   }
@@ -187,6 +232,5 @@ if (LOCAL) {
       main();
     }
   }, 100);
-
 
 })();
