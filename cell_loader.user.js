@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cell Loader
 // @namespace    http://tampermonkey.net/
-// @version      1.1.0.0
+// @version      1.1.0.1
 // @description  Fully loads cells to the highest details
 // @author       Krzysztof Kruk
 // @match        https://*.eyewire.org/*
@@ -88,7 +88,7 @@ if (LOCAL) {
       K.addCSSFile('http://127.0.0.1:8887/styles.css');
     }
     else {
-      K.addCSSFile('https://chrisraven.github.io/EyeWire-Cell-Loader/styles.css?v=2');
+      K.addCSSFile('https://chrisraven.github.io/EyeWire-Cell-Loader/styles.css?v=3');
     }
 
     $('#gameTools').after('<span id="fully-load-cell-counter" title="Fully load a cell"></span>');
