@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cell Loader
 // @namespace    http://tampermonkey.net/
-// @version      1.1.0.1
+// @version      1.2.0.0
 // @description  Fully loads cells to the highest details
 // @author       Krzysztof Kruk
 // @match        https://*.eyewire.org/*
@@ -88,7 +88,7 @@ if (LOCAL) {
       K.addCSSFile('http://127.0.0.1:8887/styles.css');
     }
     else {
-      K.addCSSFile('https://chrisraven.github.io/EyeWire-Cell-Loader/styles.css?v=3');
+      K.addCSSFile('https://chrisraven.github.io/EyeWire-Cell-Loader/styles.css?v=4');
     }
 
     $('#gameTools').after('<span id="fully-load-cell-counter" title="Fully load a cell"></span>');
@@ -113,7 +113,9 @@ if (LOCAL) {
       <input type="radio" name="cell-loader-context-menu-level-selection" id="cell-loader-lvl2" value="level2">
         <label for="cell-loader-lvl2">Level 2</label><br>
       <input type="radio" name="cell-loader-context-menu-level-selection" id="cell-loader-lvl3" value="level3">
-        <label for="cell-loader-lvl3">Level 3 (lowest details)</label>
+        <label for="cell-loader-lvl3">Level 3 (lowest details)</label><br>
+      <input type="checkbox" id="cell-loader-turn-off-for-zfish">
+        <abel for="cell-loader-turn-off-for-zfish">Turn off for ZFish</label>
     `;
     document.body.appendChild(contextMenu);
     contextMenu = K.gid(contextMenuId);
@@ -138,9 +140,17 @@ if (LOCAL) {
       K.gid('cell-loader-lvl' + levelOfDetails / 1000).checked = true;
     }
     
-    let newDistanceFromCamera = function () {
-      return levelOfDetails;
-    };
+    let lsTurnOffForZFish = 'turn-off-for-zfish';
+    let turnOffForZFish = K.ls.get(lsTurnOffForZFish);
+
+    if (turnOffForZFish === null) {
+      turnOffForZFish = false;
+      K.ls.set(lsTurnOffForZFish, turnOffForZFish);
+      K.gid('cell-loader-turn-off-for-zfish').checked = false;
+    }
+    else {
+      K.gid('cell-loader-turn-off-for-zfish').checked = turnOffForZFish;
+    }
 
     let cubeLoadedEvent = new CustomEvent("cube loaded");
 
@@ -150,6 +160,15 @@ if (LOCAL) {
 
     let originalDistanceFromCamera = tomni.threeD.distanceFromCamera;
     let originalMeshForInterleavedData = tomni.threeD.meshForInterleavedData;
+
+    let newDistanceFromCamera = function (coords) {
+      if (turnOffForZFish && tomni.getCurrentCell().info.dataset_id == 11) {
+        return originalDistanceFromCamera(coords);
+      }
+
+      // zfish has different dimensions, hence the ternary
+      return levelOfDetails * (tomni.getCurrentCell().info.dataset_id == 1 ? 1 : 4);
+    };
 
     let newMeshForInterleavedData = function (data, material) {
       document.dispatchEvent(cubeLoadedEvent);
@@ -216,6 +235,11 @@ if (LOCAL) {
           break;
       }
       K.ls.set(lsLevelOfDetailsName, levelOfDetails);
+    });
+
+    K.gid('cell-loader-turn-off-for-zfish').addEventListener('change', function (event) {
+      K.ls.set(lsTurnOffForZFish, event.target.checked);
+      turnOffForZFish = event.target.checked;
     });
 
     setState();
