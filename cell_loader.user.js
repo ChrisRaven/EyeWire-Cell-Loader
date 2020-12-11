@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name         Cell Loader
 // @namespace    http://tampermonkey.net/
-// @version      1.2.0.0
+// @version      1.2.0.1
 // @description  Fully loads cells to the highest details
 // @author       Krzysztof Kruk
 // @match        https://*.eyewire.org/*
 // @exclude      https://*.eyewire.org/1.0/*
-// @downloadURL  https://raw.githubusercontent.com/ChrisRaven/EyeWire-Cell-Loader/master/cell_loader.user.js
+// @downloadURL  https://raw.githubusercontent.com/ChrisRaven/EyeWire-Cell-Loader/main/cell_loader.user.js
 // ==/UserScript==
 
 /*jshint esversion: 6, bitwise: false */
