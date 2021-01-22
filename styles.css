@@ -8,13 +8,13 @@
   cursor: pointer;
 }
 
-#cell-loader-context-menu {
+#cell-loader-menu {
   display: none;
   position: absolute;
   bottom: 50px;
   right: 250px;
   width: 200px;
-  height: 150px;
+  height: 180px;
   background-color: rgba(29, 29, 32, .8);
   color: #bfbfbf;
   border-radius: 4px;

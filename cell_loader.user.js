@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cell Loader
 // @namespace    http://tampermonkey.net/
-// @version      1.2.0.2
+// @version      1.3
 // @description  Fully loads cells to the highest details
 // @author       Krzysztof Kruk
 // @match        https://*.eyewire.org/*
@@ -88,14 +88,12 @@ if (LOCAL) {
       K.addCSSFile('http://127.0.0.1:8887/styles.css');
     }
     else {
-      K.addCSSFile('https://chrisraven.github.io/EyeWire-Cell-Loader/styles.css?v=4');
+      K.addCSSFile('https://chrisraven.github.io/EyeWire-Cell-Loader/styles.css?v=5');
     }
 
     $('#gameTools').after('<span id="fully-load-cell-counter" title="Fully load a cell"></span>');
 
     K.injectJS(`
-      
-
       $(window)
         .on('cell-info-ready', function (e, data) {
           let cellInfoReadyEvent = new CustomEvent("cell-info-ready-triggered.fully-loaded", {detail: data});
@@ -103,33 +101,27 @@ if (LOCAL) {
       })
     `);
 
-    let contextMenuId = 'cell-loader-context-menu';
-    let contextMenu = document.createElement('div');
-    contextMenu.id = contextMenuId;
-    contextMenu.classList.add("help-menu");
-    contextMenu.innerHTML = `
-      <input type="radio" name="cell-loader-context-menu-level-selection" id="cell-loader-lvl1" value="level1">
+    let menuId = 'cell-loader-menu';
+    let menu = document.createElement('div');
+    menu.id = menuId;
+    menu.classList.add("help-menu");
+    menu.innerHTML = `
+      <input type="radio" name="cell-loader-menu-level-selection" id="cell-loader-lvl1" value="level1">
         <label for="cell-loader-lvl1">Level 1 (highest details)</label><br>
-      <input type="radio" name="cell-loader-context-menu-level-selection" id="cell-loader-lvl2" value="level2">
+      <input type="radio" name="cell-loader-menu-level-selection" id="cell-loader-lvl2" value="level2">
         <label for="cell-loader-lvl2">Level 2</label><br>
-      <input type="radio" name="cell-loader-context-menu-level-selection" id="cell-loader-lvl3" value="level3">
+      <input type="radio" name="cell-loader-menu-level-selection" id="cell-loader-lvl3" value="level3">
         <label for="cell-loader-lvl3">Level 3 (lowest details)</label><br>
+      <input type="radio" name="cell-loader-menu-level-selection" id="cell-loader-auto" value="auto">
+        <label for="cell-loader-lvl3">auto (EW default)</label><br>
       <input type="checkbox" id="cell-loader-turn-off-for-zfish">
         <abel for="cell-loader-turn-off-for-zfish">Turn off for ZFish</label>
     `;
-    document.body.appendChild(contextMenu);
-    contextMenu = K.gid(contextMenuId);
-
-    let lsStateName = 'cell-loader-state';
-    let turnedOn = K.ls.get(lsStateName);
-
-    if (turnedOn === null) {
-      turnedOn = true;
-      K.ls.set(lsStateName, turnedOn);
-    }
-    
+    document.body.appendChild(menu);
+    menu = K.gid(menuId);
+ 
     let lsLevelOfDetailsName = 'level-of-details';
-    let levelOfDetails = K.ls.get(lsLevelOfDetailsName); // 1000 - highest, 3000 - lowest
+    let levelOfDetails = K.ls.get(lsLevelOfDetailsName); // 1000 - highest, 3000 - lowest, -1 - turned off
 
     if (levelOfDetails === null) {
       levelOfDetails = 1000;
@@ -137,7 +129,12 @@ if (LOCAL) {
       K.gid('cell-loader-lvl1').checked = true;
     }
     else {
-      K.gid('cell-loader-lvl' + levelOfDetails / 1000).checked = true;
+      if (levelOfDetails != -1) {
+        K.gid('cell-loader-lvl' + levelOfDetails / 1000).checked = true;
+      }
+      else {
+        K.gid('cell-loader-auto').checked = true;
+      }
     }
     
     let lsTurnOffForZFish = 'turn-off-for-zfish';
@@ -176,15 +173,13 @@ if (LOCAL) {
     };
 
     function setState() {
-      if (turnedOn) {
+      if (levelOfDetails !== -1) {
         tomni.threeD.distanceFromCamera = newDistanceFromCamera;
         tomni.threeD.meshForInterleavedData = newMeshForInterleavedData;
-        counter.style.color = 'white';
       }
       else {
         tomni.threeD.distanceFromCamera = originalDistanceFromCamera;
         tomni.threeD.meshForInterleavedData = originalMeshForInterleavedData;
-        counter.style.color = 'gray';
       }
     }
     
@@ -206,23 +201,17 @@ if (LOCAL) {
     });
 
     document.addEventListener('click', function (event) {
-      if (event.target.id !== contextMenuId && event.target.parentNode.id !== contextMenuId) {
-        contextMenu.style.display = 'none';
+      if (event.target.id !== menuId && event.target.parentNode.id !== menuId && event.target !== counter) {
+        menu.style.display = 'none';
       }
-    })
-
-    counter.addEventListener('click', function () {
-      turnedOn = !turnedOn;
-      K.ls.set(lsStateName, turnedOn);
-      setState();
     });
 
-    counter.addEventListener('contextmenu', function (event) {
+    counter.addEventListener('click', function (event) {
       event.preventDefault();
-      contextMenu.style.display = 'block';
+      menu.style.display = 'block';
     });
 
-    contextMenu.addEventListener('change', function (event) {
+    menu.addEventListener('change', function (event) {
       switch (event.target.value) {
         case 'level1':
           levelOfDetails = 1000;
@@ -233,8 +222,12 @@ if (LOCAL) {
         case 'level3':
           levelOfDetails = 3000;
           break;
+        case 'auto':
+          levelOfDetails = -1;
+          break;
       }
       K.ls.set(lsLevelOfDetailsName, levelOfDetails);
+      setState();
     });
 
     K.gid('cell-loader-turn-off-for-zfish').addEventListener('change', function (event) {
