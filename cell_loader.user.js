@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cell Loader
 // @namespace    http://tampermonkey.net/
-// @version      1.2.0.1
+// @version      1.2.0.2
 // @description  Fully loads cells to the highest details
 // @author       Krzysztof Kruk
 // @match        https://*.eyewire.org/*
@@ -134,7 +134,7 @@ if (LOCAL) {
     if (levelOfDetails === null) {
       levelOfDetails = 1000;
       K.ls.set(lsLevelOfDetailsName, levelOfDetails);
-      K.gid('cell-lodader-lvl1').checked = true;
+      K.gid('cell-loader-lvl1').checked = true;
     }
     else {
       K.gid('cell-loader-lvl' + levelOfDetails / 1000).checked = true;
