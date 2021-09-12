@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cell Loader
 // @namespace    http://tampermonkey.net/
-// @version      1.3
+// @version      1.4
 // @description  Fully loads cells to the highest details
 // @author       Krzysztof Kruk
 // @match        https://*.eyewire.org/*
@@ -88,7 +88,7 @@ if (LOCAL) {
       K.addCSSFile('http://127.0.0.1:8887/styles.css');
     }
     else {
-      K.addCSSFile('https://chrisraven.github.io/EyeWire-Cell-Loader/styles.css?v=5');
+      K.addCSSFile('https://chrisraven.github.io/EyeWire-Cell-Loader/styles.css?v=6');
     }
 
     $('#gameTools').after('<span id="fully-load-cell-counter" title="Fully load a cell"></span>');
@@ -113,9 +113,11 @@ if (LOCAL) {
       <input type="radio" name="cell-loader-menu-level-selection" id="cell-loader-lvl3" value="level3">
         <label for="cell-loader-lvl3">Level 3 (lowest details)</label><br>
       <input type="radio" name="cell-loader-menu-level-selection" id="cell-loader-auto" value="auto">
-        <label for="cell-loader-lvl3">auto (EW default)</label><br>
+        <label for="cell-loader-auto">auto (EW default)</label><br>
       <input type="checkbox" id="cell-loader-turn-off-for-zfish">
-        <abel for="cell-loader-turn-off-for-zfish">Turn off for ZFish</label>
+        <label for="cell-loader-turn-off-for-zfish">Turn off for ZFish</label><br>
+      <input type="checkbox" id="cell-loader-turn-off-starting-cell">
+        <label for="cell-loader-turn-off-starting-cell">Turn off loading starting cell</label>
     `;
     document.body.appendChild(menu);
     menu = K.gid(menuId);
@@ -148,6 +150,9 @@ if (LOCAL) {
     else {
       K.gid('cell-loader-turn-off-for-zfish').checked = turnOffForZFish;
     }
+
+    // we are doing the check in the code before the UI has been loaded
+    K.gid('cell-loader-turn-off-starting-cell').checked = turnOffStartingCell;
 
     let cubeLoadedEvent = new CustomEvent("cube loaded");
 
@@ -235,9 +240,34 @@ if (LOCAL) {
       turnOffForZFish = event.target.checked;
     });
 
+    K.gid('cell-loader-turn-off-starting-cell').addEventListener('change', function (event) {
+      localStorage.setItem(lsTurnOffStartingCell, event.target.checked);
+      turnOffStartingCell = event.target.checked;
+    });
+
     setState();
   }
 
+      
+  let lsTurnOffStartingCell = 'ews-turn-off-starting-cell';
+  let turnOffStartingCell = localStorage.getItem(lsTurnOffStartingCell);
+  if (turnOffStartingCell === null) {
+    turnOffStartingCell = false;
+  }
+  else {
+    if (turnOffStartingCell === 'false') {
+      turnOffStartingCell = false;
+    }
+    else if (turnOffStartingCell === 'true') {
+      turnOffStartingCell = true;
+    }
+  }
+  
+  if (turnOffStartingCell) {
+    tomni.gotoPlayableCell = function () {
+      console.log('Loading random starting cell disabled');
+    };
+  }
 
   let intv = setInterval(function () {
     if (typeof account === 'undefined' || !account.account.uid) {
